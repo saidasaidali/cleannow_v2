@@ -1,0 +1,25 @@
+{
+  "short_name": "CleanNow",
+  "name": "CleanNow - Services de Nettoyage",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0ea5e9",
+  "background_color": "#0f172a",
+  "description": "Application de gestion de services de nettoyage",
+  "orientation": "portrait",
+  "categories": ["utilities", "lifestyle"]
+}

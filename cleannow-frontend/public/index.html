@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0ea5e9" />
+    <meta name="description" content="CleanNow - Plateforme de services de nettoyage" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+    <title>CleanNow</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --sky: #0ea5e9;
+        --sky-dark: #0284c7;
+        --sky-light: #38bdf8;
+        --navy: #0f172a;
+        --slate: #1e293b;
+        --slate-mid: #334155;
+        --muted: #64748b;
+        --light: #f1f5f9;
+        --white: #ffffff;
+        --emerald: #10b981;
+        --amber: #f59e0b;
+        --rose: #f43f5e;
+        --font-display: 'Syne', sans-serif;
+        --font-body: 'DM Sans', sans-serif;
+        --radius: 12px;
+        --radius-lg: 20px;
+        --shadow: 0 4px 24px rgba(0,0,0,0.18);
+        --shadow-lg: 0 8px 48px rgba(0,0,0,0.28);
+      }
+      body {
+        font-family: var(--font-body);
+        background: var(--navy);
+        color: var(--light);
+        min-height: 100vh;
+      }
+      #root { min-height: 100vh; display: flex; flex-direction: column; }
+    </style>
+  </head>
+  <body>
+    <noscript>Vous devez activer JavaScript pour utiliser CleanNow.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
