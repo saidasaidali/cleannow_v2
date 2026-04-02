@@ -63,32 +63,6 @@ app.get("/", (req, res) => {
   res.json({ message: "API CleanNow fonctionne 🚀", version: "1.0.0" });
 });
 
-// ── ROUTE TEMPORAIRE — créer admin ────────────────────
-// À SUPPRIMER après avoir créé le compte admin
-app.get("/setup-admin", async (req, res) => {
-  try {
-    const bcrypt = require("bcrypt");
-    const { User } = require("./models/associations");
-
-    // Vérifier si admin existe déjà
-    const existing = await User.findOne({ where: { email: "admin@cleannow.ma" } });
-    if (existing) {
-      return res.json({ message: "Admin existe déjà", email: existing.email });
-    }
-
-    const hash = await bcrypt.hash("Admin1234!", 10);
-    const user = await User.create({
-      nom:          "Administrateur",
-      email:        "admin@cleannow.ma",
-      mot_de_passe: hash,
-      role:         "admin",
-      statut:       "actif",
-    });
-    res.json({ message: "✅ Admin créé avec succès !", email: user.email });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
 
 // ── Démarrage serveur ─────────────────────────────────
 const PORT = process.env.PORT || 5000;
