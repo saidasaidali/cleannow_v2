@@ -84,3 +84,20 @@ export const usersAPI = {
   valider: (id)       => api.patch(`/api/users/${id}/valider`),
   rejeter: (id)       => api.patch(`/api/users/${id}/rejeter`),
 };
+
+
+
+
+
+
+export const passwordAPI = {
+  forgotPassword: (email) => api.post('/api/password/forgot', { email }),
+  resetPassword: (token, password) => api.post(`/api/password/reset/${token}`, { password }),
+};
+
+export const profilAPI = {
+  updateProfil: (id, data) => api.patch(`/api/users/${id}/profil`, data),
+  changePassword: (id, data) => api.patch(`/api/users/${id}/password`, data),
+  getHistoriqueFournisseur: (id) => api.get(`/api/users/${id}/historique`),
+  getNotificationsFournisseur: (id) => api.get(`/api/users/${id}/notifications`),
+};

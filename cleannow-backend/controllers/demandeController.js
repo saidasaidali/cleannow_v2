@@ -184,10 +184,120 @@ const updateStatutDemande = async (req, res) => {
   }
 };
 
+// =====================================
+// ÉTAPE 7 : Ajouter au demandeController.js
+// =====================================
+// Ajoutez ces 2 fonctions à controllers/demandeController.js :
+
+// ── FOURNISSEUR MARQUE TERMINÉ ────────────────────────
+const marquerTermine = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const demande = await DemandeService.findByPk(id);
+
+    if (!demande) return res.status(404).json({ error: "Demande non trouvée." });
+
+    // Vérifier que c'est bien le fournisseur
+    if (demande.fournisseur_id !== req.user.id) {
+      return res.status(403).json({ error: "Non autorisé." });
+    }
+
+    // Vérifier que la demande est en cours
+    if (demande.statut !== "en_cours") {
+      return res.status(400).json({
+        error: "La demande n'est pas en cours.",
+      });
+    }
+
+    // Passer au statut "pret_validation" (en attente de validation client)
+    await demande.update({
+      statut: "pret_validation",
+    });
+
+    res.json({
+      message: "Prestation marquée comme terminée. En attente de validation du client.",
+      demande,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── CLIENT VALIDE OU REJETTE ──────────────────────────
+const validerPrestation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { valide, motif } = req.body; // valide: true/false, motif: raison du rejet
+
+    const demande = await DemandeService.findByPk(id);
+    if (!demande) return res.status(404).json({ error: "Demande non trouvée." });
+
+    // Vérifier que c'est bien le client
+    if (demande.client_id !== req.user.id) {
+      return res.status(403).json({ error: "Non autorisé." });
+    }
+
+    // Vérifier que la demande est en attente de validation
+    if (demande.statut !== "pret_validation") {
+      return res.status(400).json({
+        error: "Cette demande n'est pas en attente de validation.",
+      });
+    }
+
+    if (valide) {
+      // CLIENT VALIDE : marquer comme complétée et créer paiement
+      await demande.update({
+        statut: "completee",
+        date_validation: new Date(),
+      });
+
+      // Créer automatiquement un paiement
+      const { Paiement } = require("../models/associations");
+      const service = await demande.getService();
+
+      const paiement = await Paiement.create({
+        demande_id: demande.id,
+        montant: service.prix,
+        statut: "en_attente", // Client n'a pas encore payé
+      });
+
+      res.json({
+        message: "Prestation validée ! Paiement créé en attente.",
+        demande,
+        paiement,
+      });
+    } else {
+      // CLIENT REJETTE : demander de recommencer
+      if (!motif) {
+        return res.status(400).json({
+          error: "Veuillez indiquer un motif de rejet.",
+        });
+      }
+
+      await demande.update({
+        statut: "en_cours", // Rerevenir à en cours
+        motif_rejet_validation: motif,
+      });
+
+      res.json({
+        message: "Prestation rejetée. Le fournisseur a été notifié.",
+        demande,
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Ajoutez à module.exports :
+// marquerTermine, validerPrestation
+
 module.exports = {
   getAllDemandes,
   getMyDemandes,
   createDemande,
   updateDemande,
   updateStatutDemande,
+  marquerTermine,
+  validerPrestation
 };

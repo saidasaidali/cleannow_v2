@@ -1,3 +1,8 @@
+// =====================================
+// ÉTAPE 1 : Mettre à jour le modèle User
+// =====================================
+// Remplacez le contenu de models/User.js par :
+
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db");
 
@@ -23,11 +28,11 @@ const User = sequelize.define("User", {
   statut: {
     type: DataTypes.ENUM("actif", "en_attente", "suspendu"),
     allowNull: false,
-    defaultValue: "actif", // bénéficiaire → actif direct
+    defaultValue: "actif",
   },
   cv_url: {
     type: DataTypes.STRING,
-    allowNull: true, // optionnel pour fournisseur
+    allowNull: true,
   },
   telephone: {
     type: DataTypes.STRING,
@@ -36,6 +41,21 @@ const User = sequelize.define("User", {
   adresse: {
     type: DataTypes.STRING,
     allowNull: true,
+  },
+  // ✨ NOUVEAU : Réinitialisation mot de passe
+  reset_token: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  reset_token_expires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  // ✨ NOUVEAU : Statut disponibilité (pour fournisseur)
+  disponibilite: {
+    type: DataTypes.ENUM("disponible", "indisponible"),
+    allowNull: false,
+    defaultValue: "disponible",
   },
 });
 

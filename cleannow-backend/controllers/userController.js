@@ -195,9 +195,191 @@ const rejeterFournisseur = async (req, res) => {
   }
 };
 
+
+// =====================================
+// ÉTAPE 4 : Ajouter au userController.js
+// =====================================
+// Copiez-collez ces 4 nouvelles fonctions à la FIN de controllers/userController.js :
+
+// ── UPDATE PROFIL (utilisateur standard) ──────────────
+const updateProfil = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nom, email, telephone, adresse, disponibilite } = req.body;
+
+    // L'utilisateur ne peut modifier que son propre profil, sauf les admins
+    if (req.user.id !== parseInt(id) && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Non autorisé." });
+    }
+
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé." });
+
+    // Vérifier unicité email
+    if (email && email !== user.email) {
+      const existing = await User.findOne({ where: { email } });
+      if (existing) {
+        return res.status(400).json({ error: "Cet email est déjà utilisé." });
+      }
+    }
+
+    const updates = {};
+    if (nom) updates.nom = nom;
+    if (email) updates.email = email;
+    if (telephone) updates.telephone = telephone;
+    if (adresse) updates.adresse = adresse;
+    if (disponibilite) updates.disponibilite = disponibilite; // fournisseur seulement
+
+    await user.update(updates);
+
+    res.json({
+      message: "Profil mis à jour avec succès.",
+      user: {
+        id: user.id,
+        nom: user.nom,
+        email: user.email,
+        telephone: user.telephone,
+        adresse: user.adresse,
+        disponibilite: user.disponibilite,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// ── CHANGER MOT DE PASSE (utilisateur standard) ──────
+const changePassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { oldPassword, newPassword } = req.body;
+
+    // L'utilisateur ne peut changer que son propre mot de passe
+    if (req.user.id !== parseInt(id)) {
+      return res.status(403).json({ error: "Non autorisé." });
+    }
+
+    if (!oldPassword || !newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        error: "Ancien et nouveau mot de passe requis. Minimum 6 caractères.",
+      });
+    }
+
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé." });
+
+    // Vérifier ancien mot de passe
+    const isMatch = await require("bcrypt").compare(oldPassword, user.mot_de_passe);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Ancien mot de passe incorrect." });
+    }
+
+    // Hasher nouveau mot de passe
+    const hash = await require("bcrypt").hash(newPassword, 10);
+    await user.update({ mot_de_passe: hash });
+
+    res.json({ message: "Mot de passe changé avec succès." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── GET DEMANDES HISTORIQUE (fournisseur) ──────────────
+const getHistoriqueFournisseur = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { statut } = req.query; // optionnel : filtrer par statut
+
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé." });
+    if (user.role !== "fournisseur") {
+      return res.status(400).json({ error: "Cet utilisateur n'est pas un fournisseur." });
+    }
+
+    const { DemandeService, Service, Evaluation } = require("../models/associations");
+
+    const where = { fournisseur_id: id };
+    if (statut) where.statut = statut;
+
+    const demandes = await DemandeService.findAll({
+      where,
+      include: [
+        { model: Service, attributes: ["nom", "prix"] },
+        { model: Evaluation, attributes: ["note", "commentaire"] },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    // Statistiques
+    const stats = {
+      total_demandes: demandes.length,
+      completees: demandes.filter((d) => d.statut === "completee").length,
+      en_cours: demandes.filter((d) => d.statut === "en_cours").length,
+      revenue_total: demandes
+        .filter((d) => d.statut === "completee")
+        .reduce((sum, d) => sum + (d.Service?.prix || 0), 0),
+      note_moyenne: demandes
+        .filter((d) => d.Evaluation)
+        .reduce((sum, d) => sum + (d.Evaluation?.note || 0), 0) / demandes.filter((d) => d.Evaluation).length || 0,
+    };
+
+    res.json({ demandes, stats });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── GET NOTIFICATIONS FOURNISSEUR ──────────────────────
+const getNotificationsFournisseur = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé." });
+    if (user.role !== "fournisseur") {
+      return res.status(400).json({ error: "Cet utilisateur n'est pas un fournisseur." });
+    }
+
+    const { DemandeService } = require("../models/associations");
+
+    // Demandes NON LUES (en attente d'action)
+    const demandesNonLues = await DemandeService.findAll({
+      where: {
+        fournisseur_id: id,
+        statut: "en_attente", // demande reçue mais pas encore acceptée/refusée
+      },
+      attributes: ["id", "createdAt"],
+      order: [["createdAt", "DESC"]],
+    });
+
+    // Demandes à valider par le client
+    const demandesAValider = await DemandeService.findAll({
+      where: {
+        fournisseur_id: id,
+        statut: "pret_validation", // fournisseur a marqué terminé, attend confirmation client
+      },
+      attributes: ["id", "createdAt"],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const unreadCount = demandesNonLues.length + demandesAValider.length;
+
+    res.json({
+      unreadCount,
+      demandesNonLues,
+      demandesAValider,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// N'oubliez pas d'exporter les nouvelles fonctions !
+// Remplacez module.exports par :
 module.exports = {
   registerUser, loginUser,
   getAllUsers, getUserById,
   createUser, updateUser, deleteUser,
   validerFournisseur, rejeterFournisseur,
+  updateProfil, changePassword, getHistoriqueFournisseur, getNotificationsFournisseur,
 };

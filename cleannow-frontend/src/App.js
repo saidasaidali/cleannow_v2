@@ -6,6 +6,7 @@ import { ProtectedRoute }   from './routes/ProtectedRoute';
 import Navbar    from './components/Navbar';
 import Footer    from './components/Footer';
 
+// ── Pages existantes ─────────────────────────────────────
 import Login            from './pages/Login';
 import Register         from './pages/Register';
 import Dashboard        from './pages/Dashboard';
@@ -16,6 +17,13 @@ import Demandes         from './pages/Demandes';
 import Paiements        from './pages/Paiements';
 import Evaluations      from './pages/Evaluations';
 import Utilisateurs     from './pages/Utilisateurs';
+
+// ── ✨ NOUVELLES PAGES (Priorité haute) ──────────────────
+import ResetPassword from './pages/ResetPassword';
+import ForgotPassword from './pages/ForgotPassword';
+import ProfilPage from './pages/ProfilPage';
+import HistoriqueFournisseur from './pages/HistoriqueFournisseur';
+
 
 const globalCSS = `
   @keyframes spin   { to { transform: rotate(360deg); } }
@@ -60,30 +68,48 @@ function Layout({ children }) {
 function AppRoutes() {
   return (
     <Routes>
+      {/* ── Routes publiques (sans navbar/footer) ────────────────────────── */}
       <Route path="/login"    element={<Login />} />
       <Route path="/register" element={<Register />} />
+      
+      {/* ✨ Routes mot de passe (sans navbar/footer) */}
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
+      {/* ── Redirection par défaut ──────────────────────────────────────── */}
       <Route path="/"         element={<Navigate to="/dashboard" replace />} />
 
+      {/* ── Routes protégées (avec navbar/footer) - Tous les utilisateurs ──── */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard"   element={<Layout><Dashboard /></Layout>} />
         <Route path="/services"    element={<Layout><Services /></Layout>} />
         <Route path="/paiements"   element={<Layout><Paiements /></Layout>} />
         <Route path="/evaluations" element={<Layout><Evaluations /></Layout>} />
+        
+        {/* ✨ Routes profil (disponibles pour tous) */}
+        <Route path="/profil"      element={<Layout><ProfilPage /></Layout>} />
       </Route>
 
+      {/* ── Routes protégées - Bénéficiaire ───────────────────────────────── */}
       <Route element={<ProtectedRoute roles={['beneficiaire']} />}>
         <Route path="/mes-demandes" element={<Layout><MesDemandes /></Layout>} />
       </Route>
 
+      {/* ── Routes protégées - Fournisseur & Admin ─────────────────────────── */}
       <Route element={<ProtectedRoute roles={['fournisseur', 'admin']} />}>
         <Route path="/demandes-a-traiter" element={<Layout><DemandesATraiter /></Layout>} />
+        
+        {/* ✨ Historique du fournisseur */}
+        <Route path="/historique" element={<Layout><HistoriqueFournisseur /></Layout>} />
       </Route>
 
+      {/* ── Routes protégées - Admin uniquement ──────────────────────────── */}
       <Route element={<ProtectedRoute roles={['admin']} />}>
         <Route path="/demandes"     element={<Layout><Demandes /></Layout>} />
         <Route path="/utilisateurs" element={<Layout><Utilisateurs /></Layout>} />
       </Route>
 
+      {/* ── Fallback (page non trouvée) ──────────────────────────────────── */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

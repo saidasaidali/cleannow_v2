@@ -9,6 +9,7 @@ const { User, Service, DemandeService, Paiement, Evaluation } = require("./model
 
 // Routes
 const authRoutes      = require("./routes/auth");
+const passwordRoutes = require("./routes/password");
 const serviceRoutes   = require("./routes/services");
 const demandeRoutes   = require("./routes/demandes");
 const paiementRoutes  = require("./routes/paiements");
@@ -57,6 +58,7 @@ app.use("/api/demandes",    demandeRoutes);
 app.use("/api/paiements",   paiementRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/users",       userRoutes);
+app.use("/api/password", passwordRoutes);
 
 // ── Route de test ─────────────────────────────────────
 app.get("/", (req, res) => {
